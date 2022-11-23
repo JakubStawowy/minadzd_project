@@ -2,14 +2,21 @@ from bs4 import BeautifulSoup
 from requests import get
 from pymongo import MongoClient
 
+from conf import get_secrets
+
+secrets = get_secrets()
 connection_local = MongoClient(
     'localhost',
-    27017
+    27017,
+    username=secrets['local_db_user'],
+    password=secrets['local_db_passwd'],
+    authMechanism='SCRAM-SHA-256'
 )
 
-connection_cloud = MongoClient('mongodb+srv://Admin:Admin486@projectminadzd.5zghkdq.mongodb.net/?retryWrites=true&w=majority')
+connection_cloud = MongoClient(f'mongodb+srv://'
+                               f'{secrets["cloud_db_user"]}:{secrets["cloud_db_passwd"]}@projectminadzd.5zghkdq.mongodb.net/'
+                               '?retryWrites=true&w=majority')
 
-# db = client.get_database('MiNADZD')
 
 BASE_URL = 'https://bonito.pl'
 BASE_PAGE_URL = 'https://bonito.pl/kategoria/muzyka/?page=<page_number>'
