@@ -1,25 +1,7 @@
 from bs4 import BeautifulSoup
 from requests import get
-from pymongo import MongoClient
-
-from conf import get_secrets
-
-secrets = get_secrets()
-connection_local = MongoClient(
-    'localhost',
-    27017,
-    username=secrets['local_db_user'],
-    password=secrets['local_db_passwd'],
-    authMechanism='SCRAM-SHA-256'
-)
-
-connection_cloud = MongoClient(f'mongodb+srv://'
-                               f'{secrets["cloud_db_user"]}:{secrets["cloud_db_passwd"]}@projectminadzd.5zghkdq.mongodb.net/'
-                               '?retryWrites=true&w=majority')
-
-
-BASE_URL = 'https://bonito.pl'
-BASE_PAGE_URL = 'https://bonito.pl/kategoria/muzyka/?page=<page_number>'
+from conf import get_local_db, get_cloud_db
+from consts import BASE_PAGE_URL, COLLECTION_NAME
 
 
 def extract_max_page(page_info):
@@ -34,11 +16,11 @@ page_numbering_info = bs.find_all('img', class_='arrow_pagination')[0]\
 
 max_page_number = extract_max_page(page_numbering_info)
 
-db_local = connection_local.get_database('minadzd')
-collection_local = db_local.get_collection('bonito_albums')
+client_local, db_local = get_local_db()
+collection_local = db_local.get_collection(COLLECTION_NAME)
 
-db_cloud = connection_cloud.get_database('MiNADZD')
-collection_cloud = db_cloud.get_collection('bonito_albums')
+client_cloud, db_cloud = get_cloud_db()
+collection_cloud = db_cloud.get_collection(COLLECTION_NAME)
 
 for page_number in range(int(max_page_number)):
     page = get(BASE_PAGE_URL.replace('<page_number>', str(page_number)))
@@ -87,5 +69,5 @@ for page_number in range(int(max_page_number)):
         collection_cloud.insert_one(document)
 
 
-connection_local.close()
-connection_cloud.close()
+client_local.close()
+client_cloud.close()
